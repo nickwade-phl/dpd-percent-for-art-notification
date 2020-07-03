@@ -1,29 +1,12 @@
-# create a parcels geojson-based geodataframe file with geometry to compare to AGO geojson-based geodataframe file with geometry
-import geopandas as gpd
-from geopandas import read_file
-
-pwdParcels_gdf = read_file('https://phl.carto.com:443/api/v2/sql?q=select%20*%20from%20phl.pwd_parcels&format=GEOJSON&method=export')
-
-# create an art sites geojson-based geodataframe file with geometry to compare to parcels geojson-based geodataframe file with geometry. define the crs as 4326 so it can be analyzed against the carto parcels and permits layers
-artSites_gdf = read_file('https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Test_Art_Sites/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnHiddenFields=false&returnGeometry=true&returnCentroid=false&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=none&f=GEOJSON&token=Kd3CaU2QNHFkWVApSPuYu7TcgM5r-_0hObkgkmhlQ62is-fBfd7v8K0C20lmCY6B2rPp0buefxaJpas3ppsOIHkXLtPpCYia-FQlCI0KGtCEBdlet5zNCQqg6XB_OMEG7g8SjGcdQdwQv6coq91w-nZYSaJsRbqi-Zi4W6IK6Wf2zhSjYU11AopltMr61xwMsKI7V37Re2Onw3nJv_QDS8RNdkOwYcjui4MTvMHa8no.&format=GEOJSON&method=export', crs='EPSG:4326')
-
-# join intersecting pwd parcels to test art sites (needs to be swapped out for real art sites later)
-artSiteParcels = gpd.sjoin(pwdParcels_gdf, artSites_gdf, how='inner', op='intersects')
-artSiteParcels
-
-# rename the index columns of the artSiteParcels so that artSiteParcels can be joined again - this time, to the permits
-artSiteParcels = artSiteParcels.rename(columns={'index_left': 'parcels_index','index_right': 'art_index'})
-
-# read the l and i permits layer to see which permits were pulled and export to geojson. make sure to change the number of days to '1 day' when the script is ready 
-liPermits_gdf = gpd.read_file("https://phl.carto.com:443/api/v2/sql?q=select%20*%20from%20phl.li_permits%20WHERE%20permitissuedate%20=%20(current_date%20-%20interval%20'82%20days')&format=GEOJSON&method=export")
-liPermits_gdf
-
-# find artSiteParcels that are intersected by liPermits_gdf
-permits_at_artSiteParcels = gpd.sjoin(artSiteParcels, liPermits_gdf, how='inner', op='intersects')
-permits_at_artSiteParcels
-
-# import pandas to create dataframes
+import requests
 import pandas as pd
+import io
+
+url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20parcel.address,%20parcel.owner1,%20parcel.owner2,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.p4a_id%20FROM%20phl.pwd_parcels%20parcel%20inner%20join%20percent_for_art_public%20art%20on%20ST_DWithin(parcel.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20inner%20join%20permits%20permit%20on%20ST_Contains(art.the_geom_webmercator,%20permit.the_geom_webmercator)%20where%20permit.permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)'
+r = requests.get(url)
+r_dict = r.json()
+r_dict_values = r_dict['rows']
+#print(len(r_dict_values))
 
 # import time to add the date of the export to the excel document
 import time 
@@ -47,22 +30,22 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os.path
 
-todaysDate = time.strftime('%d-%m-%Y')
+todaysDate = time.strftime('%m-%d-%Y')
 
 excelFileName = "PulledPermits_" + todaysDate + ".xlsx"
 
 # send the email
-if len(permits_at_artSiteParcels) > 0:
-    print(permits_at_artSiteParcels) 
-    df = pd.DataFrame(data=permits_at_artSiteParcels,columns=['Address','Art_Name','address_right','permitdescription','permitnumber','address_left','owner1','owner2'])
-    df.to_excel(excelFileName, header=['Art Site Address','Art Site Name','Permit Address','Permit Description','Permit Number','Triggering Parcel Address','Triggering Parcel Owner 1','Triggering Parcel Owner 2']) 
+if len(r_dict_values) > 0:
+    print(r_dict_values) 
+    df = pd.DataFrame(data=r_dict_values,columns=['address','owner1','owner2','permitissuedate','permitdescription','approvedscopeofwork','permitnumber','title','artist','medium','p4a_id'])
+    df.to_excel(excelFileName, header=['Parcel Address','Parcel Owner 1','Parcel Owner 2','Permit Issue Date','Permit Description','Scope of Work','Permit Number','Art Title','Artist','Medium','Art P4A_ID']) 
     
     # set up email variables 
-    sender = os.environ.get('DanWork_Email')
-    senderPassword = os.environ.get('DanWork_Password')
-    receivers = os.environ.get('DanPersonal_Email')
-    subject = 'Permit Pulled at Art Location'
-    message = 'A permit was pulled at an art location. See the attached Excel file for details.'
+    sender = os.environ.get('DPDAppsProd_Email')
+    senderPassword = os.environ.get('DPDAppsProd_Password')
+    receivers = os.environ.get('Dan_Email', 'Kacie_Email')
+    subject = 'Permit Pulled Near Art Location'
+    message = 'A permit was pulled close to an art location. Explore art sites here: http://phl.maps.arcgis.com/apps/View/index.html?appid=096b3c2a955e49f9921d948f3403a1d0.'
 
     msg = MIMEMultipart()
     msg['From'] = sender
@@ -96,11 +79,11 @@ else:
     print("No matches")
     
     # set up email variables
-    sender = os.environ.get('DanWork_Email')
-    senderPassword = os.environ.get('DanWork_Password')
-    receivers = os.environ.get('DanPersonal_Email')
-    subject = 'No Permits Pulled at Art Locations'
-    message = 'No permits were pulled at art locations yesterday.'
+    sender = os.environ.get('DPDAppsProd_Email')
+    senderPassword = os.environ.get('DPDAppsProd_Password')
+    receivers = os.environ.get('Dan_Email')
+    subject = 'No Permits Pulled Near Art Locations'
+    message = 'No permits were pulled near art locations yesterday.'
 
     msg = MIMEMultipart()
     msg['From'] = sender
