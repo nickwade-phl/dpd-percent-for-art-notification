@@ -43,7 +43,7 @@ if len(r_dict_values) > 0:
     # set up email variables 
     sender = os.environ.get('DPDAppsProd_Email')
     senderPassword = os.environ.get('DPDAppsProd_Password')
-    receivers = os.environ.get('Dan_Email', 'Kacie_Email')
+    receivers = [os.environ.get('Dan_Email'), os.environ.get('Kacie_Email')]
     subject = 'Permit Pulled Near Art Location'
     message = 'A permit was pulled close to an art location. Explore art sites here: http://phl.maps.arcgis.com/apps/View/index.html?appid=096b3c2a955e49f9921d948f3403a1d0.'
 
