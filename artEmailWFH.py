@@ -15,8 +15,8 @@ import time
 import os
 
 # openpyxl for writing to excel
-import openpyxl
-from openpyxl import Workbook
+#import openpyxl
+#from openpyxl import Workbook
 
 # import stmplib for simple email
 import smtplib
@@ -30,16 +30,27 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os.path
 
-todaysDate = time.strftime('%m-%d-%Y')
+import datetime
+from datetime import date, timedelta
 
-excelFileName = "PulledPermits_" + todaysDate + ".xlsx"
+yesterday = (datetime.date.today() - timedelta(1)).strftime('%m-%d-%Y')
+
+excelFileName = "PulledPermits_" + yesterday + ".xlsx"
 
 # send the email
 if len(r_dict_values) > 0:
     print(r_dict_values) 
-    df = pd.DataFrame(data=r_dict_values,columns=['address','owner1','owner2','permitissuedate','permitdescription','approvedscopeofwork','permitnumber','title','artist','medium','p4a_id'])
-    df.to_excel(excelFileName, header=['Parcel Address','Parcel Owner 1','Parcel Owner 2','Permit Issue Date','Permit Description','Scope of Work','Permit Number','Art Title','Artist','Medium','Art P4A_ID']) 
-    
+    df = pd.DataFrame(data=r_dict_values,columns=['address','owner1','owner2','permitissuedate','permitdescription','approvedscopeofwork','permitnumber','title','artist','medium','google_streetview_link','p4a_id'])
+    writer = pd.ExcelWriter(excelFileName, engine='xlsxwriter', date_format='mm dd yyyy', datetime_format='mm/dd/yyy')
+    df.to_excel(writer, header=['Parcel Address','Parcel Owner 1','Parcel Owner 2','Permit Issue Date','Permit Description','Scope of Work','Permit Number','Art Title','Artist','Medium','Streetview','Art P4A_ID'], sheet_name='Sheet1') 
+    workbook = writer.book
+    worksheet = writer.sheets['Sheet1']
+
+    worksheet.set_column('B:H', 17)
+    worksheet.set_column('I:M', 9.5)
+
+    writer.save()
+
     # set up email variables 
     sender = os.environ.get('DPDAppsProd_Email')
     senderPassword = os.environ.get('DPDAppsProd_Password')
