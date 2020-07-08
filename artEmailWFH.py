@@ -49,7 +49,7 @@ if len(r_dict_values) > 0:
 
     msg = MIMEMultipart()
     msg['From'] = sender
-    msg['To'] = receivers
+    msg['To'] = ", ".join(receivers)
     msg['Subject'] = subject
 
     # attach the message to the MIMEMultipart object
@@ -81,13 +81,13 @@ else:
     # set up email variables
     sender = os.environ.get('DPDAppsProd_Email')
     senderPassword = os.environ.get('DPDAppsProd_Password')
-    receivers = os.environ.get('Dan_Email')
+    receivers = [os.environ.get('Dan_Email'), os.environ.get('Kacie_Email')]
     subject = 'No Permits Pulled Near Art Locations'
     message = 'No permits were pulled near art locations yesterday.'
 
     msg = MIMEMultipart()
     msg['From'] = sender
-    msg['To'] = receivers
+    msg['To'] = ",".join(receivers)
     msg['Subject'] = subject
 
     # attach the message to the MIMEMultipart object
