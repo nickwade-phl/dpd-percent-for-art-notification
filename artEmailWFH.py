@@ -1,15 +1,11 @@
 import requests
 import pandas as pd
-import io
 
 url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20parcel.address,%20parcel.owner1,%20parcel.owner2,%20permit.address%20as%20permit_address,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.p4a_id%20FROM%20phl.pwd_parcels%20parcel%20inner%20join%20percent_for_art_public%20art%20on%20ST_DWithin(parcel.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20inner%20join%20permits%20permit%20on%20ST_Contains(art.the_geom_webmercator,%20permit.the_geom_webmercator)%20where%20permit.permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)'
 r = requests.get(url)
 r_dict = r.json()
 r_dict_values = r_dict['rows']
 #print(len(r_dict_values))
-
-# import time to add the date of the export to the excel document
-import time 
 
 # import os for environmnent variables
 import os
@@ -30,10 +26,9 @@ from email.mime.base import MIMEBase
 from email import encoders
 import os.path
 
-import datetime
 from datetime import date, timedelta
 
-yesterday = (datetime.date.today() - timedelta(1)).strftime('%m-%d-%Y')
+yesterday = (date.today() - timedelta(1)).strftime('%m-%d-%Y')
 
 excelFileName = "PulledPermits_" + yesterday + ".xlsx"
 
