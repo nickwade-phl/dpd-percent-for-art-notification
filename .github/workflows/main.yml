@@ -20,7 +20,7 @@ jobs:
         AWS_DEFAULT_REGION: 'us-east-1'
     - name: Update Environment Variables
       run: |
-        $(aws lambda update-function-configuration 
-          --function-name dpd-percent-for-art-notification 
-          --environment "Variables={DPDAppsProd_Email=secrets.DPDAppsProd_Email,DPDAppsProd_Password=secrets.DPDAppsProd_Password, Dan_Email=secrets.Dan_Email,Kacie_Email=secrets.Kacie_Email,Sara_Email=secrets.Sara_Email}"
-          --region us-east-1)
+        aws lambda update-function-configuration \
+          --function-name dpd-percent-for-art-notification \
+          --environment "Variables={DPDAppsProd_Email=secrets.DPDAppsProd_Email,DPDAppsProd_Password=secrets.DPDAppsProd_Password, Dan_Email=secrets.Dan_Email,Kacie_Email=secrets.Kacie_Email,Sara_Email=secrets.Sara_Email}" \
+          --region us-east-1 \
