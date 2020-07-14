@@ -1,3 +1,4 @@
+# this project checks permit datasets against percent for art layers and emails staff if any fall within 250 feet of an art site.
 import requests
 import pandas as pd
 
