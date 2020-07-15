@@ -3,6 +3,7 @@ def lambda_handler(event, context):
     import requests
     import pandas as pd
     import xlsxwriter
+    import glob
 
     url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20parcel.address,%20parcel.owner1,%20parcel.owner2,%20permit.address%20as%20permit_address,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.google_streetview_link,%20art.p4a_id%20FROM%20phl.pwd_parcels%20parcel%20inner%20join%20percent_for_art_public%20art%20on%20ST_DWithin(parcel.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20inner%20join%20permits%20permit%20on%20ST_Contains(art.the_geom_webmercator,%20permit.the_geom_webmercator)%20where%20permit.permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)'
     r = requests.get(url)
@@ -107,3 +108,9 @@ def lambda_handler(event, context):
         text = msg.as_string()
         smtpObj.sendmail(sender, receivers, text)
         smtpObj.quit()
+
+    files = glob.glob(f'{rootPath}/*')
+    for f in files:
+        os.remove(f)
+
+
