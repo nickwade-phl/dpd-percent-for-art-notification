@@ -28,7 +28,9 @@ def lambda_handler(event, context):
     
     yesterday = (date.today() - timedelta(1)).strftime('%m-%d-%Y')
     
-    excelFileName = "PulledPermits_" + yesterday + ".xlsx"
+    isAws = os.environ.get('isAwsEnvironment', False)
+    rootPath = "/tmp/"
+    excelFileName = rootPath + "PulledPermits_" + yesterday + ".xlsx" if isAws else "PulledPermits_" + yesterday + ".xlsx"
     
     # send the email
     if len(r_dict_values) > 0:
