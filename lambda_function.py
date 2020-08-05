@@ -5,7 +5,7 @@ def lambda_handler(event, context):
     import xlsxwriter
     import glob
 
-    url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20parcel.address,%20parcel.owner1,%20parcel.owner2,%20permit.address%20as%20permit_address,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.google_streetview_link,%20art.p4a_id%20FROM%20phl.pwd_parcels%20parcel%20inner%20join%20percent_for_art_public%20art%20on%20ST_DWithin(parcel.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20inner%20join%20permits%20permit%20on%20ST_Contains(art.the_geom_webmercator,%20permit.the_geom_webmercator)%20where%20permit.permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)'
+    url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20permit.address%20as%20permit_address,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.google_streetview_link,%20art.p4a_id%20FROM%20phl.percent_for_art_public%20art%20inner%20join%20permits%20permit%20on%20ST_DWithin(permit.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20where%20permit.permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)'
     r = requests.get(url)
     r_dict = r.json()
     r_dict_values = r_dict['rows']
@@ -36,14 +36,14 @@ def lambda_handler(event, context):
     # send the email
     if len(r_dict_values) > 0:
         print(r_dict_values) 
-        df = pd.DataFrame(data=r_dict_values,columns=['address','owner1','owner2','permit_address','permitissuedate','permitdescription','approvedscopeofwork','permitnumber','title','artist','medium','google_streetview_link','p4a_id'])
+        df = pd.DataFrame(data=r_dict_values,columns=['permit_address','permitissuedate','permitdescription','approvedscopeofwork','permitnumber','title','artist','medium','google_streetview_link','p4a_id'])
         writer = pd.ExcelWriter(excelFileName, engine='xlsxwriter', date_format='mm dd yyyy', datetime_format='mm/dd/yyy')
-        df.to_excel(writer, header=['Parcel Address','Parcel Owner 1','Parcel Owner 2','Permit Address','Permit Issue Date','Permit Description','Scope of Work','Permit Number','Art Title','Artist','Medium','Streetview','Art P4A_ID'], sheet_name='Sheet1') 
+        df.to_excel(writer, header=['Permit Address','Permit Issue Date','Permit Description','Scope of Work','Permit Number','Art Title','Artist','Medium','Streetview','Art P4A_ID'], sheet_name='Sheet1') 
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
     
-        worksheet.set_column('B:H', 17)
-        worksheet.set_column('I:N', 9.5)
+        worksheet.set_column('B:E', 17)
+        worksheet.set_column('F:K', 9.5)
     
         writer.save()
     
