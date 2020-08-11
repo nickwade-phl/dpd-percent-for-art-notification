@@ -42,8 +42,8 @@ def lambda_handler(event, context):
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
     
-        worksheet.set_column('B:E', 17)
-        worksheet.set_column('F:K', 9.5)
+        worksheet.set_column('B:F', 17)
+        worksheet.set_column('G:K', 9.5)
     
         writer.save()
     
