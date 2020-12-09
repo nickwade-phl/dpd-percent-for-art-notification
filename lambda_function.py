@@ -5,7 +5,7 @@ def lambda_handler(event, context):
     import xlsxwriter
     import glob
 
-    url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20permit.address%20as%20permit_address,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.image,%20art.google_streetview_link,%20art.p4a_id%20FROM%20phl.percent_for_art_public%20art%20inner%20join%20permits%20permit%20on%20ST_DWithin(permit.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20where%20permit.permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)'
+    url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20permit.address%20as%20permit_address,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.image,%20art.google_streetview_link,%20art.p4a_id%20FROM%20phl.percent_for_art_public%20art%20inner%20join%20permits%20permit%20on%20ST_DWithin(permit.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20%20where%20permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)%20and%20permitdescription%20not%20in%20(%27ELECTRICAL%20PERMIT%27,%27FIRE%20SUPPRESSION%20PERMIT%27,%27PLUMBING%20PERMIT%27,%27MECHANICAL%20PERMIT%27,%27MECHANICAL%20/%20FUEL%20GAS%20PERMIT%27)'
     r = requests.get(url)
     r_dict = r.json()
     r_dict_values = r_dict['rows']
