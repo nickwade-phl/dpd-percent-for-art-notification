@@ -1,58 +1,94 @@
 def lambda_handler(event, context):
     # this project checks permit datasets against percent for art layers and emails staff if any fall within 250 feet of an art site.
-    import requests
     import pandas as pd
+    import requests
+    import geopandas as gpd
+    import json
+    import matplotlib.pyplot as plt
+    from shapely.geometry import shape
+    from shapely.geometry.collection import GeometryCollection
     import xlsxwriter
     import glob
 
-    url = r'https://phl.carto.com/api/v2/sql?q=SELECT%20permit.address%20as%20permit_address,%20permit.permitissuedate,%20permit.permitdescription,%20permit.approvedscopeofwork,%20permit.permitnumber,%20art.title,%20art.artist,%20art.medium,%20art.image,%20art.google_streetview_link,%20art.p4a_id%20FROM%20phl.percent_for_art_public%20art%20inner%20join%20permits%20permit%20on%20ST_DWithin(permit.the_geom_webmercator,%20art.the_geom_webmercator,%2076.2)%20%20where%20permitissuedate%20=%20(current_date%20-%20interval%20%271%20day%27)%20and%20permitdescription%20not%20in%20(%27ELECTRICAL%20PERMIT%27,%27FIRE%20SUPPRESSION%20PERMIT%27,%27PLUMBING%20PERMIT%27,%27MECHANICAL%20PERMIT%27,%27MECHANICAL%20/%20FUEL%20GAS%20PERMIT%27)'
-    r = requests.get(url)
-    r_dict = r.json()
-    r_dict_values = r_dict['rows']
-    
     # import os for environmnent variables
     import os
-        
+
     # import stmplib for simple email
     import smtplib
-    
+
     # import mime stuff for better email layout
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
     from email.mime.base import MIMEBase
-    
+
     # import things to handle email attachments
     from email import encoders
     import os.path
-    
+
     from datetime import date, timedelta
     
     yesterday = (date.today() - timedelta(1)).strftime('%m-%d-%Y')
     
     isAws = os.environ.get('isAwsEnvironment', False)
     rootPath = "/tmp/"
-    excelFileName = rootPath + "PulledPermits_" + yesterday + ".xlsx" if isAws else "PulledPermits_" + yesterday + ".xlsx"
+    excelFileName = rootPath + "PermitApplications_" + yesterday + ".xlsx" if isAws else "PermitApplications_" + yesterday + ".xlsx"
+    
+    token_url = "https://www.arcgis.com/sharing/rest/oauth2/token"
+
+    P4A_ClientID = os.environ.get('PercentForArt_ClientID')
+    P4A_ClientSecret = os.environ.get('PercentForArt_ClientSecret')
+
+    payload = "client_id="+ P4A_ClientID + "&client_secret=" + P4A_ClientSecret + "&grant_type=client_credentials"
+    headers = {
+        'content-type': "application/x-www-form-urlencoded",
+        'accept': "application/json",
+        'cache-control': "no-cache",
+        }
+
+    response = requests.request("POST", token_url, data=payload, headers=headers)
+
+    token = response.json()['access_token']
+    
+    permits_url = 'https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/PermitAppStatusEclipse/FeatureServer/0/query?where=APPLICATIONDATE+%3E+%28CURRENT_TIMESTAMP+-+INTERVAL+%272%27+DAY%29+AND%20geocode_x%20is%20not%20null%20AND+APPLICATIONDESCRIPTION+NOT+IN+%28%27ELECTRICAL+PERMIT%27%2C%27FIRE+SUPPRESSION+PERMIT%27%2C%27MECHANICAL+PERMIT%27%2C%27MECHANICAL+%2F+FUEL+GAS+PERMIT%27%2C%27PLUMBING+PERMIT%27%29&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=standard&f=pgeojson&token=' + token
+    permits_geodf = gpd.read_file(permits_url)
+    
+    art_url = 'https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Percent_for_Art_Public/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&returnCentroid=false&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=standard&f=pgeojson&token=' + token
+    art_geodf = gpd.read_file(art_url)
+    
+    # update the crs to ensure a match
+    permits_pa = permits_geodf.to_crs(epsg=2272) 
+    art_pa = art_geodf.to_crs(epsg=2272)
+    
+    # change permit geometry to a 250' buffer of the license point feature
+    permits_pa['geometry'] = permits_pa.geometry.buffer(250)
+    
+    # make a spatial join
+    joined_art = gpd.sjoin(permits_pa, art_pa, how="inner", op="intersects")
+    
+    # correct the date format
+    joined_art['APPLICATIONDATE']=(pd.to_datetime(joined_art['APPLICATIONDATE'],unit='ms'))
     
     # send the email
-    if len(r_dict_values) > 0:
-        print(r_dict_values) 
-        df = pd.DataFrame(data=r_dict_values,columns=['permit_address','permitissuedate','permitdescription','approvedscopeofwork','permitnumber','title','artist','medium','image','google_streetview_link','p4a_id'])
-        writer = pd.ExcelWriter(excelFileName, engine='xlsxwriter', date_format='mm dd yyyy', datetime_format='mm/dd/yyy')
-        df.to_excel(writer, header=['Permit Address','Permit Issue Date','Permit Description','Scope of Work','Permit Number','Art Title','Artist','Medium','Image','Streetview','Art P4A_ID'], sheet_name='Sheet1') 
+    if len(joined_art) > 0:
+        print(joined_art) 
+        df = pd.DataFrame(data=joined_art,columns=['ADDRESS_left','APPLICATIONNUMBER','APPLICATIONDATE','APPLICATIONDESCRIPTION','STATUS_left','COMMENTS','SYSTEM_OF_RECORD','TITLE', 'ARTIST','MEDIUM','IMAGE','GOOGLE_STREETVIEW_LINK','P4A_ID'])
+        pd.to_datetime(df['APPLICATIONDATE'], unit='ms')        
+        writer = pd.ExcelWriter(excelFileName, engine='xlsxwriter', date_format='mm dd yyyy', datetime_format='mm/dd/yyyy')
+        df.to_excel(writer, header=['Permit Address','Permit Number','Permit Application Date','Permit Description','Permit Status','Permit Comments','Permit System of Record','Title', 'Artist','Medium','Image','Streetview','Art P4A_ID'], sheet_name='Sheet1') 
         workbook = writer.book
         worksheet = writer.sheets['Sheet1']
-    
-        worksheet.set_column('B:F', 17)
-        worksheet.set_column('G:L', 9.5)
-    
+
+        worksheet.set_column('B:H', 22)
+        worksheet.set_column('I:N', 15)
+
         writer.save()
     
         # set up email variables 
         sender = os.environ.get('DPDAppsProd_Email')
         senderPassword = os.environ.get('DPDAppsProd_Password')
         receivers = [os.environ.get('Dan_Email'), os.environ.get('Kacie_Email'), os.environ.get('Sara_Email')]
-        subject = 'Permit Pulled Near Art Location'
-        message = 'A permit was pulled close to an art location. Explore art sites here: http://phl.maps.arcgis.com/apps/View/index.html?appid=096b3c2a955e49f9921d948f3403a1d0.'
+        subject = 'Permit Activity Near an Art Site'
+        message = 'Permit activity occurred near an art site yesterday. Explore art sites here: http://phl.maps.arcgis.com/apps/View/index.html?appid=096b3c2a955e49f9921d948f3403a1d0.'
     
         msg = MIMEMultipart()
         msg['From'] = sender
@@ -89,8 +125,8 @@ def lambda_handler(event, context):
         sender = os.environ.get('DPDAppsProd_Email')
         senderPassword = os.environ.get('DPDAppsProd_Password')
         receivers = [os.environ.get('Dan_Email'), os.environ.get('Kacie_Email'), os.environ.get('Sara_Email')]
-        subject = 'No Permits Pulled Near Art Locations'
-        message = 'No permits were pulled near art locations yesterday.'
+        subject = 'No Permit Activity Near Art Locations'
+        message = 'No permit applications were submitted near art locations yesterday.'
     
         msg = MIMEMultipart()
         msg['From'] = sender
