@@ -4,8 +4,6 @@ def lambda_handler(event, context):
     import requests
     import geopandas as gpd
     import json
-    from shapely.geometry import shape
-    from shapely.geometry.collection import GeometryCollection
     import xlsxwriter
     import glob
 
