@@ -28,4 +28,4 @@ jobs:
       run: |
         aws lambda update-function-configuration \
           --function-name dpd-percent-for-art-notification \
-          --environment "Variables={DPDAppsProd_Email=${{ secrets.DPDAppsProd_Email }},DPDAppsProd_Password=${{ secrets.DPDAppsProd_Password }}, Dan_Email=${{ secrets.Dan_Email }},Kacie_Email=${{ secrets.Kacie_Email }},Sara_Email=${{ secrets.Sara_Email }}, isAwsEnvironment=True}"
+          --environment "Variables={DPDAppsProd_Email=${{ secrets.DPDAppsProd_Email }},DPDAppsProd_Password=${{ secrets.DPDAppsProd_Password }}, Dan_Email=${{ secrets.Dan_Email }},Kacie_Email=${{ secrets.Kacie_Email }},Sara_Email=${{ secrets.Sara_Email }},{PercentForArt_ClientID=${{ secrets.PercentForArt_ClientID }},{PercentForArt_ClientSecret=${{ secrets.PercentForArt_ClientSecret }} isAwsEnvironment=True}"
