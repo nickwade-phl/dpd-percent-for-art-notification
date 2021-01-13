@@ -49,9 +49,11 @@ def lambda_handler(event, context):
 
     token = response.json()['access_token']
     
+    # get permits as a geodataframe
     permits_url = 'https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/PermitAppStatusEclipse/FeatureServer/0/query?where=APPLICATIONDATE+%3E+%28CURRENT_TIMESTAMP+-+INTERVAL+%272%27+DAY%29+AND%20geocode_x%20is%20not%20null%20AND+APPLICATIONDESCRIPTION+NOT+IN+%28%27ELECTRICAL+PERMIT%27%2C%27FIRE+SUPPRESSION+PERMIT%27%2C%27MECHANICAL+PERMIT%27%2C%27MECHANICAL+%2F+FUEL+GAS+PERMIT%27%2C%27PLUMBING+PERMIT%27%29&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=standard&f=pgeojson&token=' + token
     permits_geodf = gpd.read_file(permits_url)
     
+    # get art as a geodataframe
     art_url = 'https://services.arcgis.com/fLeGjb7u4uXqeF9q/arcgis/rest/services/Percent_for_Art_Public/FeatureServer/0/query?where=1%3D1&objectIds=&time=&geometry=&geometryType=esriGeometryEnvelope&inSR=&spatialRel=esriSpatialRelIntersects&resultType=none&distance=0.0&units=esriSRUnit_Meter&returnGeodetic=false&outFields=*&returnGeometry=true&returnCentroid=false&featureEncoding=esriDefault&multipatchOption=xyFootprint&maxAllowableOffset=&geometryPrecision=&outSR=&datumTransformation=&applyVCSProjection=false&returnIdsOnly=false&returnUniqueIdsOnly=false&returnCountOnly=false&returnExtentOnly=false&returnQueryGeometry=false&returnDistinctValues=false&cacheHint=false&orderByFields=&groupByFieldsForStatistics=&outStatistics=&having=&resultOffset=&resultRecordCount=&returnZ=false&returnM=false&returnExceededLimitFeatures=true&quantizationParameters=&sqlFormat=standard&f=pgeojson&token=' + token
     art_geodf = gpd.read_file(art_url)
     
