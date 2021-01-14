@@ -1,4 +1,1 @@
-fiona
-pyproj
 xlsxwriter
-geopandas==0.8.1
