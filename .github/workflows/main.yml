@@ -12,10 +12,10 @@ jobs:
     steps:
     - uses: actions/checkout@master
     - name: Deploy code to Lambda
-      uses: mariamrf/py-lambda-action@v1.0.0
+      uses: denzalman/lambda-python-action@v1.0.0
       with:
         lambda_layer_arn: 'arn:aws:lambda:us-east-1:922311303087:layer:dpd-percent-for-art-notification-dependencies'
-        lambda_function_name: 'dpd-percent-for-art-notification'
+        lambda_name: 'dpd-percent-for-art-notification'
       env:
         AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
         AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -28,4 +28,4 @@ jobs:
       run: |
         aws lambda update-function-configuration \
           --function-name dpd-percent-for-art-notification \
-          --environment "Variables={DPDAppsProd_Email=${{ secrets.DPDAppsProd_Email }},DPDAppsProd_Password=${{ secrets.DPDAppsProd_Password }}, Dan_Email=${{ secrets.Dan_Email }},Kacie_Email=${{ secrets.Kacie_Email }},Sara_Email=${{ secrets.Sara_Email }}, isAwsEnvironment=True}"
+          --environment "Variables={DPDAppsProd_Email=${{ secrets.DPDAppsProd_Email }},DPDAppsProd_Password=${{ secrets.DPDAppsProd_Password }}, Dan_Email=${{ secrets.Dan_Email }},Kacie_Email=${{ secrets.Kacie_Email }},Sara_Email=${{ secrets.Sara_Email }},PercentForArt_ClientID=${{ secrets.PercentForArt_ClientID }},PercentForArt_ClientSecret=${{ secrets.PercentForArt_ClientSecret }} isAwsEnvironment=True}"
