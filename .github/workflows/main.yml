@@ -34,5 +34,5 @@ jobs:
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-numpy:13 \
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-shapely:1 \
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:14 \
-              "${INPUT_LAMBDA_LAYER_ARN}:${LAYER_VERSION}"
+              $REQUIREMENTS_ARN
 
