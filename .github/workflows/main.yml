@@ -24,6 +24,7 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           AWS_DEFAULT_REGION: "us-east-1"
         run: |
+          set REQUIREMENTS_ARN=`aws lambda list-layer-versions --layer-name dpd-percent-for-art-notification-dependencies --region us-east-1 --query 'LayerVersions[0].LayerVersionArn'`
           aws lambda update-function-configuration \
             --function-name dpd-percent-for-art-notification \
             --environment "Variables={DPDAppsProd_Email=${{ secrets.DPDAppsProd_Email }},DPDAppsProd_Password=${{ secrets.DPDAppsProd_Password }}, Dan_Email=${{ secrets.Dan_Email }},Kacie_Email=${{ secrets.Kacie_Email }},Sara_Email=${{ secrets.Sara_Email }},PercentForArt_ClientID=${{ secrets.PercentForArt_ClientID }},PercentForArt_ClientSecret=${{ secrets.PercentForArt_ClientSecret }} isAwsEnvironment=True}" \
@@ -32,5 +33,5 @@ jobs:
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-numpy:13 \
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-shapely:1 \
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:14 \
-              arn:aws:lambda:us-east-1:922311303087:layer:dpd-percent-for-art-notification-dependencies:29
+              $REQUIREMENTS_ARN
 
