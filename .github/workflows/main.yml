@@ -10,10 +10,11 @@ jobs:
     steps:
       - uses: actions/checkout@master
       - name: Deploy code to Lambda & Custom Dependencies Layer
-        uses: denzalman/lambda-python-action@1.0.0
+        uses: qubitro/action-lambda-python-zip@v1.0
         with:
           lambda_layer_arn: "arn:aws:lambda:us-east-1:922311303087:layer:dpd-percent-for-art-notification-dependencies"
           lambda_function_name: "dpd-percent-for-art-notification"
+          lambda_region: 'us-east-1'
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -33,5 +34,5 @@ jobs:
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-numpy:13 \
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-shapely:1 \
               arn:aws:lambda:us-east-1:770693421928:layer:Klayers-python38-requests:14 \
-              $REQUIREMENTS_ARN
+              "${INPUT_LAMBDA_LAYER_ARN}:${LAYER_VERSION}"
 
