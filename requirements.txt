@@ -1,8 +1,3 @@
 requests==2.25.0
 pandas==1.1.5
-numpy
-shapely
-fiona
-pyproj
 xlsxwriter
-geopandas==0.8.1
